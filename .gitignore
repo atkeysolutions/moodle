@@ -19,7 +19,6 @@
 # Temporary files including undo
 *~
 #
-/config.php
 /lib/editor/tinymce/extra/tools/temp/
 /tags
 /TAGS
@@ -44,3 +43,8 @@ composer.phar
 /lib/yuilib/*/*/*-coverage.js
 atlassian-ide-plugin.xml
 /node_modules/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
