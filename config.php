@@ -20,6 +20,8 @@ $CFG->dboptions = array (
 $CFG->wwwroot   = getenv('WWW_ROOT');
 $CFG->dataroot  = '/var/app/shared/moodledata';
 $CFG->admin     = 'admin';
+$CFG->tempdir   = '/var/app/tmp'; 
+$CFG->cachedir  = '/var/app/cache';
 $CFG->localcachedir = '/var/app/shared/cache';
 
 $CFG->directorypermissions = 0777;
