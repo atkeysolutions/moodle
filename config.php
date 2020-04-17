@@ -18,6 +18,7 @@ $CFG->dboptions = array (
 );
 
 $CFG->wwwroot   = getenv('WWW_ROOT');
+$CFG->sslproxy  = true;
 $CFG->dataroot  = '/var/app/shared/moodledata';
 $CFG->admin     = 'admin';
 $CFG->tempdir   = '/var/app/tmp'; 
