@@ -2,7 +2,7 @@
   require(__DIR__.'/../config.php');
   require_once($CFG->dirroot.'/user/profile/lib.php');
 
-  $user = get_complete_user_data('id', $_GET['id']);
+  $user = get_complete_user_data('idnumber', $_GET['id']);
 
   if($user->profile["blue_login_token"] == ""){
     print_error("nologinas");
