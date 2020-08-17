@@ -1,3 +1,6 @@
 [submodule "mod/bigbluebuttonbn"]
 	path = mod/bigbluebuttonbn
 	url = git@github.com:blindsidenetworks/moodle-mod_bigbluebuttonbn.git
+[submodule "mod/scheduler"]
+	path = mod/scheduler
+	url = git@github.com:bostelm/moodle-mod_scheduler.git
