@@ -45,3 +45,8 @@ atlassian-ide-plugin.xml
 /node_modules/
 moodle-plugin-ci.phar
 .elasticbeanstalk
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
