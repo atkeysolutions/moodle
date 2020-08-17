@@ -1,0 +1,3 @@
+[submodule "mod/bigbluebuttonbn"]
+	path = mod/bigbluebuttonbn
+	url = git@github.com:blindsidenetworks/moodle-mod_bigbluebuttonbn.git
