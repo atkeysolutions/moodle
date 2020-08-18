@@ -4,3 +4,6 @@
 [submodule "mod/scheduler"]
 	path = mod/scheduler
 	url = git@github.com:bostelm/moodle-mod_scheduler.git
+[submodule "mod/bootstrapelements"]
+	path = mod/bootstrapelements
+	url = https://bitbucket.org/covuni/moodle-mod_bootstrapelements.git
