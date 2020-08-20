@@ -7,3 +7,6 @@
 [submodule "mod/bootstrapelements"]
 	path = mod/bootstrapelements
 	url = https://bitbucket.org/covuni/moodle-mod_bootstrapelements.git
+[submodule "blocks/forum_aggregator"]
+	path = blocks/forum_aggregator
+	url = git@github.com:t6nis/moodle-block_forum_aggregator.git
