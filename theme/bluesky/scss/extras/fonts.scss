@@ -1,0 +1,78 @@
+@font-face {
+    font-family: 'line-awesome';
+        src:url('[[font:theme|line-awesome.eot]]');
+        src:url('[[font:theme|line-awesome.eot]]?') format('embedded-opentype'),
+            url('[[font:theme|line-awesome.woff2]]') format('woff2'),
+            url('[[font:theme|line-awesome.woff]]') format('woff'),
+            url('[[font:theme|line-awesome.ttf]]') format('truetype'),
+            url('[[font:theme|line-awesome.svg]]#line-awesome') format('svg');
+    font-style: normal;
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-regular.eot]]');
+    src: url('[[font:theme|basiersquare-regular.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-regular.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-regular.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-regular.svg]]#basier_squareregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-regularitalic.eot]]');
+    src: url('[[font:theme|basiersquare-regularitalic.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-regularitalic.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-regularitalic.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-regularitalic.svg]]#basier_squareregular_italic') format('svg');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-semibold.eot]]');
+    src: url('[[font:theme|basiersquare-semibold.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-semibold.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-semibold.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-semibold.svg]]#basier_squaresemibold') format('svg');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-semibolditalic.eot]]');
+    src: url('[[font:theme|basiersquare-semibolditalic.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-semibolditalic.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-semibolditalic.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-semibolditalic.svg]]#basier_squaresemibold_italic') format('svg');
+    font-weight: 600;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-medium.eot');
+    src: url('[[font:theme|basiersquare-medium.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-medium.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-medium.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-medium.svg]]#basier_squaremedium') format('svg');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'basier-square';
+    src: url('[[font:theme|basiersquare-mediumitalic.eot]]');
+    src: url('[[font:theme|basiersquare-mediumitalic.eot]]?#iefix') format('embedded-opentype'),
+         url('[[font:theme|basiersquare-mediumitalic.woff2]]') format('woff2'),
+         url('[[font:theme|basiersquare-mediumitalic.woff]]') format('woff'),
+         url('[[font:theme|basiersquare-mediumitalic.svg]]#basier_squaremedium_italic') format('svg');
+    font-weight: 500;
+    font-style: italic;
+}
+
