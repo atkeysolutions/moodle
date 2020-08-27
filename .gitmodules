@@ -10,3 +10,6 @@
 [submodule "blocks/forum_aggregator"]
 	path = blocks/forum_aggregator
 	url = git@github.com:t6nis/moodle-block_forum_aggregator.git
+[submodule "theme/bluesky"]
+	path = theme/bluesky
+	url = git@github.com:atkeysolutions/moodle-theme_bluesky.git
