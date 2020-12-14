@@ -13,3 +13,7 @@
 [submodule "theme/bluesky"]
 	path = theme/bluesky
 	url = git@github.com:atkeysolutions/moodle-theme_bluesky.git
+[submodule "course/format/tiles"]
+	path = course/format/tiles
+	url = git@github.com:atkeysolutions/moodle-format_tiles.git
+	branch = blue
