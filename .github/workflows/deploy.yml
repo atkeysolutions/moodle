@@ -2,9 +2,9 @@ name: Deploy Moodle
 
 on:
   push:
-    branches: [ 'blue_39' ]
+    branches: [ 'blue_39', 'blue_39_prod' ]
   pull_request:
-    branches: [ 'blue_39' ]
+    branches: [ 'blue_39', 'blue_39_prod' ]
 
 jobs:
   build:
@@ -27,3 +27,16 @@ jobs:
         deployment_package: deploy.zip
         wait_for_environment_recovery: 60
         region: eu-west-2
+      if: github.ref == 'refs/heads/blue_39'
+    - name: Deploy to Production
+      uses: einaregilsson/beanstalk-deploy@v20
+      with:
+        aws_access_key: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+        application_name: Moodle
+        environment_name: Moodle
+        version_label: ${{ github.sha }}
+        deployment_package: deploy.zip
+        wait_for_environment_recovery: 60
+        region: eu-west-2
+      if: github.ref == 'refs/heads/blue_39_prod'
