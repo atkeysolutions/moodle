@@ -26,6 +26,7 @@ jobs:
         version_label: ${{ github.sha }}
         deployment_package: deploy.zip
         wait_for_environment_recovery: 60
+        use_existing_version_if_available: true
         region: eu-west-2
       if: github.ref == 'refs/heads/blue_39'
     - name: Deploy to Production
@@ -38,5 +39,6 @@ jobs:
         version_label: ${{ github.sha }}_prod
         deployment_package: deploy.zip
         wait_for_environment_recovery: 60
+        use_existing_version_if_available: true
         region: eu-west-2
       if: github.ref == 'refs/heads/blue_39_prod'
