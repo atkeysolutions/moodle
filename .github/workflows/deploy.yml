@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: true
-    - run: zip -r deploy.zip . -x '*.git*'
+    - run: zip -r ${{ github.sha}}-deploy.zip . -x '*.git*'
     - name: Deploy to Staging
       uses: einaregilsson/beanstalk-deploy@v20
       with:
@@ -24,7 +24,7 @@ jobs:
         application_name: "Moodle Staging"
         environment_name: Moodlestaging-20220927
         version_label: ${{ github.sha }}
-        deployment_package: deploy.zip
+        deployment_package: ${{ github.sha}}-deploy.zip
         wait_for_environment_recovery: 60
         use_existing_version_if_available: true
         region: eu-west-2
