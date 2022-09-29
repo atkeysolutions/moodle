@@ -859,7 +859,7 @@ $CFG->admin = 'admin';
 //           ),
 //           'extensions' => array(
 //               'Behat\MinkExtension' => array(
-//                   'selenium2' => array(
+//                   'webddriver' => array(
 //                       'browser' => 'firefox',
 //                       'capabilities' => array(
 //                           'platform' => 'OS X 10.6',
@@ -872,7 +872,7 @@ $CFG->admin = 'admin';
 //       'Mac-Safari' => array(
 //           'extensions' => array(
 //               'Behat\MinkExtension' => array(
-//                   'selenium2' => array(
+//                   'webddriver' => array(
 //                       'browser' => 'safari',
 //                       'capabilities' => array(
 //                           'platform' => 'OS X 10.8',
@@ -914,6 +914,12 @@ $CFG->admin = 'admin';
 // seconds, for instance).
 // Example:
 //   $CFG->behat_increasetimeout = 3;
+//
+// Yon can specify a window size modifier for Behat, which is applied to any window szie changes.
+// For example, if a window size of 640x768 is specified, with a modifier of 2, then the final size is 1280x1536.
+// This is particularly useful for behat reruns to eliminate issues with window sizing.
+// Example:
+//   $CFG->behat_window_size_modifier = 1;
 //
 // Including feature files from directories outside the dirroot is possible if required. The setting
 // requires that the running user has executable permissions on all parent directories in the paths.

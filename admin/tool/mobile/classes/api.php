@@ -221,7 +221,7 @@ class api {
         }
 
         // Identity providers.
-        $authsequence = get_enabled_auth_plugins(true);
+        $authsequence = get_enabled_auth_plugins();
         $identityproviders = \auth_plugin_base::get_identity_providers($authsequence);
         $identityprovidersdata = \auth_plugin_base::prepare_identity_providers_for_output($identityproviders, $OUTPUT);
         if (!empty($identityprovidersdata)) {
@@ -320,6 +320,12 @@ class api {
             foreach ($colornumbers as $number) {
                 $settings->{'core_admin_coursecolor' . $number} = get_config('core_admin', 'coursecolor' . $number);
             }
+        }
+
+        if (empty($section) or $section == 'supportcontact') {
+            $settings->supportname = $CFG->supportname;
+            $settings->supportemail = $CFG->supportemail;
+            $settings->supportpage = $CFG->supportpage;
         }
 
         return $settings;

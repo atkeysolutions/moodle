@@ -2002,7 +2002,7 @@ class quiz_attempt {
         // Transition to the appropriate state.
         switch ($this->quizobj->get_quiz()->overduehandling) {
             case 'autosubmit':
-                $this->process_finish($timestamp, false);
+                $this->process_finish($timestamp, false, $studentisonline ? $timestamp : $timeclose);
                 return;
 
             case 'graceperiod':
@@ -2160,7 +2160,20 @@ class quiz_attempt {
         $transaction->allow_commit();
     }
 
-    public function process_finish($timestamp, $processsubmitted) {
+    /**
+     * Submit the attempt.
+     *
+     * The separate $timefinish argument should be used when the quiz attempt
+     * is being processed asynchronously (for example when cron is submitting
+     * attempts where the time has expired).
+     *
+     * @param int $timestamp the time to record as last modified time.
+     * @param bool $processsubmitted if true, and question responses in the current
+     *      POST request are stored to be graded, before the attempt is finished.
+     * @param ?int $timefinish if set, use this as the finish time for the attempt.
+     *      (otherwise use $timestamp as the finish time as well).
+     */
+    public function process_finish($timestamp, $processsubmitted, $timefinish = null) {
         global $DB;
 
         $transaction = $DB->start_delegated_transaction();
@@ -2173,7 +2186,7 @@ class quiz_attempt {
         question_engine::save_questions_usage_by_activity($this->quba);
 
         $this->attempt->timemodified = $timestamp;
-        $this->attempt->timefinish = $timestamp;
+        $this->attempt->timefinish = $timefinish ?? $timestamp;
         $this->attempt->sumgrades = $this->quba->get_total_mark();
         $this->attempt->state = self::FINISHED;
         $this->attempt->timecheckstate = null;
@@ -2440,7 +2453,7 @@ class quiz_attempt {
             if ($becomingabandoned) {
                 $this->process_abandon($timenow, true);
             } else {
-                $this->process_finish($timenow, !$toolate);
+                $this->process_finish($timenow, !$toolate, $toolate ? $timeclose : $timenow);
             }
 
         } catch (question_out_of_sequence_exception $e) {
@@ -2465,19 +2478,25 @@ class quiz_attempt {
     }
 
     /**
-     * Check a page access to see if is an out of sequence access.
+     * Check a page read access to see if is an out of sequence access.
      *
-     * @param  int $page page number.
-     * @return boolean false is is an out of sequence access, true otherwise.
+     * If allownext is set then we also check whether access to the page
+     * after the current one should be permitted.
+     *
+     * @param int $page page number.
+     * @param bool $allownext in case of a sequential navigation, can we go to next page ?
+     * @return boolean false is an out of sequence access, true otherwise.
      * @since Moodle 3.1
      */
-    public function check_page_access($page) {
-        if ($this->get_currentpage() != $page) {
-            if ($this->get_navigation_method() == QUIZ_NAVMETHOD_SEQ && $this->get_currentpage() > $page) {
-                return false;
-            }
+    public function check_page_access($page, $allownext = true) {
+        if ($this->get_navigation_method() != QUIZ_NAVMETHOD_SEQ) {
+            return true;
         }
-        return true;
+        // Sequential access: allow access to the summary, current page or next page.
+        // Or if the user review his/her attempt, see MDLQA-1523.
+        return $page == -1
+            || $page == $this->get_currentpage()
+            || $allownext && ($page == $this->get_currentpage() + 1);
     }
 
     /**

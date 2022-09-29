@@ -604,7 +604,7 @@ $string['emailalreadysent'] = 'A password reset email has already been sent. Ple
 $string['emailactive'] = 'Email activated';
 $string['emailagain'] = 'Email (again)';
 $string['emailconfirm'] = 'Confirm your account';
-$string['emailconfirmation'] = 'Hi {$a->firstname},
+$string['emailconfirmation'] = 'Hi,
 
 A new account has been requested at \'{$a->sitename}\'
 using your email address.
@@ -642,7 +642,7 @@ $string['emaildisable'] = 'This email address is disabled';
 $string['emaildisableclick'] = 'Click here to disable all email from being sent to this address';
 $string['emaildisplay'] = 'Email display';
 $string['emaildisplay_help'] = 'Privileged users (such as teachers and managers) will always be able to see your email address.';
-$string['emaildisplaycourse'] = 'Allow only other course members to see my email address';
+$string['emaildisplaycourse'] = 'Allow only other course participants to see my email address';
 $string['emaildisplayno'] = 'Hide my email address from non-privileged users';
 $string['emaildisplayyes'] = 'Allow everyone to see my email address';
 $string['emailenable'] = 'This email address is enabled';
@@ -674,7 +674,7 @@ line at the top of your web browser window.
 If you need help, please contact the site administrator,
 {$a->admin}';
 $string['emailpasswordconfirmationsubject'] = '{$a}: Change password confirmation';
-$string['emailpasswordconfirmmaybesent'] = '<p>If you supplied a correct username or email address then an email should have been sent to you.</p>
+$string['emailpasswordconfirmmaybesent'] = '<p>If you supplied a correct username or unique email address then an email should have been sent to you.</p>
    <p>It contains easy instructions to confirm and complete this password change.
 If you continue to have difficulty, please contact the site administrator.</p>';
 $string['emailpasswordconfirmnoemail'] = '<p>The user account you specified does not have a recorded email address.</p>
@@ -1174,6 +1174,7 @@ $string['loginstepsnone'] = '<p>Hi!</p>
 <p>All you need to do is make up a username and password and use it in the form on this page!</p>
 <p>If someone else has already chosen your username then you\'ll have to try again using a different username.</p>';
 $string['loginto'] = 'Log in to {$a}';
+$string['logoof'] = 'Logo of {$a}';
 $string['logout'] = 'Log out';
 $string['logoutconfirm'] = 'Do you really want to log out?';
 $string['logs'] = 'Logs';
@@ -1463,7 +1464,7 @@ $string['normalfilter'] = 'Normal search';
 $string['nosite'] = 'Could not find site-level course';
 $string['nostudentsfound'] = 'No {$a} found';
 $string['nostudentsingroup'] = 'There are no students in this group yet';
-$string['nostudentsyet'] = 'No students enrolled in this course yet';
+$string['nostudentsyet'] = 'There are no students enrolled in this course.';
 $string['nosuchemail'] = 'No such email address';
 $string['notavailable'] = 'Not available';
 $string['notavailablecourse'] = '{$a} is not available';
@@ -2199,6 +2200,7 @@ $string['useruploadtype'] = 'User upload type: {$a}';
 $string['userzones'] = 'User zones';
 $string['usetheme'] = 'Use theme';
 $string['usingexistingcourse'] = 'Using existing course';
+$string['validatehtml'] = 'Validate HTML';
 $string['valuealreadyused'] = 'This value has already been used.';
 $string['version'] = 'Version';
 $string['view'] = 'View';
@@ -2214,6 +2216,7 @@ $string['viewsolution'] = 'view solution';
 $string['visible'] = 'Visible';
 $string['visible_help'] = 'This setting determines whether the course appears in the list of courses. Apart from teachers and administrators, users are not allowed to enter the course.';
 $string['visibletostudents'] = 'Visible to {$a}';
+$string['wcagcheck'] = 'Web Content Accessibility Guidelines (WCAG) check';
 $string['warning'] = 'Warning';
 $string['warningdeleteresource'] = 'Warning: {$a} is referred in a resource. Would you like to update the resource?';
 $string['webpage'] = 'Web page';

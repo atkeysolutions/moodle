@@ -2110,7 +2110,6 @@ class restore_ras_and_caps_structure_step extends restore_structure_step {
 
     public function process_override($data) {
         $data = (object)$data;
-
         // Check roleid is one of the mapped ones
         $newrole = $this->get_mapping('role', $data->roleid);
         $newroleid = $newrole->newitemid ?? false;
@@ -2128,8 +2127,8 @@ class restore_ras_and_caps_structure_step extends restore_structure_step {
                 // Check if the new role is an overrideable role AND if the user performing the restore has the
                 // capability to assign the capability.
                 if (in_array($newrole->info['shortname'], $overrideableroles) &&
-                    ($safecapability && has_capability('moodle/role:safeoverride', $context, $userid) ||
-                        !$safecapability && has_capability('moodle/role:override', $context, $userid))
+                    (has_capability('moodle/role:override', $context, $userid) ||
+                            ($safecapability && has_capability('moodle/role:safeoverride', $context, $userid)))
                 ) {
                     assign_capability($data->capability, $data->permission, $newroleid, $this->task->get_contextid());
                 } else {
@@ -4046,9 +4045,30 @@ class restore_contentbankcontent_structure_step extends restore_structure_step {
         $exists = $DB->record_exists('contentbank_content', $params);
         if (!$exists) {
             $params['configdata'] = $data->configdata;
-            $params['usercreated'] = $this->get_mappingid('user', $data->usercreated);
-            $params['usermodified'] = $this->get_mappingid('user', $data->usermodified);
             $params['timemodified'] = time();
+
+            // Trying to map users. Users cannot always be mapped, e.g. when copying.
+            $params['usercreated'] = $this->get_mappingid('user', $data->usercreated);
+            if (!$params['usercreated']) {
+                // Leave the content creator unchanged when we are restoring the same site.
+                // Otherwise use current user id.
+                if ($this->task->is_samesite()) {
+                    $params['usercreated'] = $data->usercreated;
+                } else {
+                    $params['usercreated'] = $this->task->get_userid();
+                }
+            }
+            $params['usermodified'] = $this->get_mappingid('user', $data->usermodified);
+            if (!$params['usermodified']) {
+                // Leave the content modifier unchanged when we are restoring the same site.
+                // Otherwise use current user id.
+                if ($this->task->is_samesite()) {
+                    $params['usermodified'] = $data->usermodified;
+                } else {
+                    $params['usermodified'] = $this->task->get_userid();
+                }
+            }
+
             $newitemid = $DB->insert_record('contentbank_content', $params);
             $this->set_mapping('contentbank_content', $oldid, $newitemid, true);
         }
@@ -4176,7 +4196,7 @@ class restore_block_instance_structure_step extends restore_structure_step {
         // Let's look for anything within configdata neededing processing
         // (nulls and uses of legacy file.php)
         if ($attrstotransform = $this->task->get_configdata_encoded_attributes()) {
-            $configdata = (array)unserialize(base64_decode($data->configdata));
+            $configdata = (array) unserialize_object(base64_decode($data->configdata));
             foreach ($configdata as $attribute => $value) {
                 if (in_array($attribute, $attrstotransform)) {
                     $configdata[$attribute] = $this->contentprocessor->process_cdata($value);

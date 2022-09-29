@@ -322,7 +322,15 @@ class core_badges_renderer extends plugin_renderer_base {
         $badgeclass = $ibadge->badgeclass;
         $badge = new badge($ibadge->badgeid);
         $now = time();
-        $expiration = isset($issued['expires']) ? $issued['expires'] : $now + 86400;
+        if (isset($issued['expires'])) {
+            if (!is_numeric($issued['expires'])) {
+                $issued['expires'] = strtotime($issued['expires']);
+            }
+            $expiration = $issued['expires'];
+        } else {
+            $expiration = $now + 86400;
+        }
+
         $badgeimage = is_array($badgeclass['image']) ? $badgeclass['image']['id'] : $badgeclass['image'];
         $languages = get_string_manager()->get_list_of_languages();
 
@@ -431,9 +439,6 @@ class core_badges_renderer extends plugin_renderer_base {
         }
         $dl[get_string('dateawarded', 'badges')] = userdate($issued['issuedOn']);
         if (isset($issued['expires'])) {
-            if (!is_numeric($issued['expires'])) {
-                $issued['expires'] = strtotime($issued['expires']);
-            }
             if ($issued['expires'] < $now) {
                 $dl[get_string('expirydate', 'badges')] = userdate($issued['expires']) . get_string('warnexpired', 'badges');
 
@@ -1289,13 +1294,13 @@ class core_badges_renderer extends plugin_renderer_base {
             );
             if (!$currentbadge->is_active() && !$currentbadge->is_locked()) {
                 $action = $this->output->action_icon(
-                    new moodle_url('related_action.php',
-                        array(
-                            'badgeid' => $related->currentbadgeid,
-                            'relatedid' => $badge->id,
-                            'action' => 'remove'
-                        )
-                    ), new pix_icon('t/delete', get_string('delete')));
+                    new moodle_url('/badges/related_action.php', [
+                        'badgeid' => $related->currentbadgeid,
+                        'relatedid' => $badge->id,
+                        'sesskey' => sesskey(),
+                        'action' => 'remove'
+                    ]),
+                    new pix_icon('t/delete', get_string('delete')));
                 $actions = html_writer::tag('div', $action, array('class' => 'badge-actions'));
                 array_push($row, $actions);
             }
@@ -1333,13 +1338,14 @@ class core_badges_renderer extends plugin_renderer_base {
             );
             if (!$currentbadge->is_active() && !$currentbadge->is_locked()) {
                 $delete = $this->output->action_icon(
-                    new moodle_url('alignment_action.php',
-                        array(
-                            'id' => $currentbadge->id,
-                            'alignmentid' => $item->id,
-                            'action' => 'remove'
-                        )
-                    ), new pix_icon('t/delete', get_string('delete')));
+                    new moodle_url('/badges/alignment_action.php', [
+                        'id' => $currentbadge->id,
+                        'alignmentid' => $item->id,
+                        'sesskey' => sesskey(),
+                        'action' => 'remove'
+                    ]),
+                    new pix_icon('t/delete', get_string('delete'))
+                );
                 $edit = $this->output->action_icon(
                     new moodle_url('alignment.php',
                         array(

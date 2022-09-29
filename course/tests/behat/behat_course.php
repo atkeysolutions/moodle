@@ -852,22 +852,12 @@ class behat_course extends behat_base {
      * @param string $newactivityname
      */
     public function i_change_activity_name_to($activityname, $newactivityname) {
-
-        if (!$this->running_javascript()) {
-            throw new DriverException('Change activity name step is not available with Javascript disabled');
-        }
-
-        $activity = $this->escape($activityname);
-
-        $this->execute('behat_course::i_click_on_in_the_activity',
-            array(get_string('edittitle'), "link", $activity)
-        );
-
-        // Adding chr(10) to save changes.
-        $this->execute('behat_forms::i_set_the_field_to',
-            array('title', $this->escape($newactivityname) . chr(10))
-        );
-
+        $this->execute('behat_forms::i_set_the_field_in_container_to', [
+            get_string('edittitle'),
+            $activityname,
+            'activity',
+            $newactivityname
+        ]);
     }
 
     /**
@@ -1354,42 +1344,6 @@ class behat_course extends behat_base {
      */
     protected function is_editing_on() {
         return $this->getSession()->getPage()->findButton(get_string('turneditingoff')) ? true : false;
-    }
-
-    /**
-     * Returns the id of the category with the given idnumber.
-     *
-     * Please note that this function requires the category to exist. If it does not exist an ExpectationException is thrown.
-     *
-     * @param string $idnumber
-     * @return string
-     * @throws ExpectationException
-     */
-    protected function get_category_id($idnumber) {
-        global $DB;
-        try {
-            return $DB->get_field('course_categories', 'id', array('idnumber' => $idnumber), MUST_EXIST);
-        } catch (dml_missing_record_exception $ex) {
-            throw new ExpectationException(sprintf("There is no category in the database with the idnumber '%s'", $idnumber));
-        }
-    }
-
-    /**
-     * Returns the id of the course with the given idnumber.
-     *
-     * Please note that this function requires the category to exist. If it does not exist an ExpectationException is thrown.
-     *
-     * @param string $idnumber
-     * @return string
-     * @throws ExpectationException
-     */
-    protected function get_course_id($idnumber) {
-        global $DB;
-        try {
-            return $DB->get_field('course', 'id', array('idnumber' => $idnumber), MUST_EXIST);
-        } catch (dml_missing_record_exception $ex) {
-            throw new ExpectationException(sprintf("There is no course in the database with the idnumber '%s'", $idnumber));
-        }
     }
 
     /**

@@ -206,7 +206,10 @@ define('PARAM_RAW_TRIMMED', 'raw_trimmed');
 define('PARAM_SAFEDIR',  'safedir');
 
 /**
- * PARAM_SAFEPATH - several PARAM_SAFEDIR joined by "/", suitable for include() and require(), plugin paths, etc.
+ * PARAM_SAFEPATH - several PARAM_SAFEDIR joined by "/", suitable for include() and require(), plugin paths
+ * and other references to Moodle code files.
+ *
+ * This is NOT intended to be used for absolute paths or any user uploaded files.
  */
 define('PARAM_SAFEPATH',  'safepath');
 
@@ -2725,7 +2728,7 @@ function require_login($courseorid = null, $autologinguest = true, $cm = null, $
             }
 
             // Give auth plugins an opportunity to authenticate or redirect to an external login page
-            $authsequence = get_enabled_auth_plugins(true); // auths, in sequence
+            $authsequence = get_enabled_auth_plugins(); // Auths, in sequence.
             foreach($authsequence as $authname) {
                 $authplugin = get_auth_plugin($authname);
                 $authplugin->pre_loginpage_hook();
@@ -3919,7 +3922,7 @@ function get_auth_plugin($auth) {
 /**
  * Returns array of active auth plugins.
  *
- * @param bool $fix fix $CFG->auth if needed
+ * @param bool $fix fix $CFG->auth if needed. Only set if logged in as admin.
  * @return array
  */
 function get_enabled_auth_plugins($fix=false) {
@@ -3933,13 +3936,21 @@ function get_enabled_auth_plugins($fix=false) {
         $auths = explode(',', $CFG->auth);
     }
 
-    if ($fix) {
-        $auths = array_unique($auths);
-        foreach ($auths as $k => $authname) {
-            if (!exists_auth_plugin($authname) or in_array($authname, $default)) {
-                unset($auths[$k]);
-            }
+    $auths = array_unique($auths);
+    $oldauthconfig = implode(',', $auths);
+    foreach ($auths as $k => $authname) {
+        if (in_array($authname, $default)) {
+            // The manual and nologin plugin never need to be stored.
+            unset($auths[$k]);
+        } else if (!exists_auth_plugin($authname)) {
+            debugging(get_string('authpluginnotfound', 'debug', $authname));
+            unset($auths[$k]);
         }
+    }
+
+    // Ideally only explicit interaction from a human admin should trigger a
+    // change in auth config, see MDL-70424 for details.
+    if ($fix) {
         $newconfig = implode(',', $auths);
         if (!isset($CFG->auth) or $newconfig != $CFG->auth) {
             set_config('auth', $newconfig);
@@ -6538,7 +6549,6 @@ function send_confirmation_email($user, $confirmationurl = null) {
     $supportuser = core_user::get_support_user();
 
     $data = new stdClass();
-    $data->firstname = fullname($user);
     $data->sitename  = format_string($site->fullname);
     $data->admin     = generate_email_signoff();
 
@@ -7789,7 +7799,14 @@ function get_plugin_list_with_function($plugintype, $function, $file = 'lib.php'
             $filepath = $allplugins[$pluginname] . DIRECTORY_SEPARATOR . $file;
             if (file_exists($filepath)) {
                 include_once($filepath);
-                $pluginfunctions[$plugintype . '_' . $pluginname] = $functionname;
+
+                // Now that the file is loaded, we must verify the function still exists.
+                if (function_exists($functionname)) {
+                    $pluginfunctions[$plugintype . '_' . $pluginname] = $functionname;
+                } else {
+                    // Invalidate the cache for next run.
+                    \cache_helper::invalidate_by_definition('core', 'plugin_functions');
+                }
             }
         }
     }
@@ -7822,6 +7839,7 @@ function get_plugins_with_function($function, $file = 'lib.php', $include = true
     // Clearning the filename as cache_helper::hash_key only allows a-zA-Z0-9_.
     $key = $function . '_' . clean_param($file, PARAM_ALPHA);
     $pluginfunctions = $cache->get($key);
+    $dirty = false;
 
     // Use the plugin manager to check that plugins are currently installed.
     $pluginmanager = \core_plugin_manager::instance();
@@ -7836,14 +7854,14 @@ function get_plugins_with_function($function, $file = 'lib.php', $include = true
             foreach ($plugins as $plugin => $function) {
                 if (!isset($installedplugins[$plugin])) {
                     // Plugin code is still present on disk but it is not installed.
-                    unset($pluginfunctions[$plugintype][$plugin]);
-                    continue;
+                    $dirty = true;
+                    break 2;
                 }
 
                 // Cache might be out of sync with the codebase, skip the plugin if it is not available.
                 if (empty($allplugins[$plugin])) {
-                    unset($pluginfunctions[$plugintype][$plugin]);
-                    continue;
+                    $dirty = true;
+                    break 2;
                 }
 
                 $fileexists = file_exists($allplugins[$plugin] . DIRECTORY_SEPARATOR . $file);
@@ -7852,11 +7870,22 @@ function get_plugins_with_function($function, $file = 'lib.php', $include = true
                     include_once($allplugins[$plugin] . DIRECTORY_SEPARATOR . $file);
                 } else if (!$fileexists) {
                     // If the file is not available any more it should not be returned.
-                    unset($pluginfunctions[$plugintype][$plugin]);
+                    $dirty = true;
+                    break 2;
+                }
+
+                // Check if the function still exists in the file.
+                if ($include && !function_exists($function)) {
+                    $dirty = true;
+                    break 2;
                 }
             }
         }
-        return $pluginfunctions;
+
+        // If the cache is dirty, we should fall through and let it rebuild.
+        if (!$dirty) {
+            return $pluginfunctions;
+        }
     }
 
     $pluginfunctions = array();
@@ -8315,21 +8344,38 @@ function moodle_setlocale($locale='') {
  * Words are defined as things between whitespace.
  *
  * @category string
- * @param string $string The text to be searched for words.
+ * @param string $string The text to be searched for words. May be HTML.
  * @return int The count of words in the specified string
  */
 function count_words($string) {
+    // Before stripping tags, add a space after the close tag of anything that is not obviously inline.
+    // Also, br is a special case because it definitely delimits a word, but has no close tag.
+    $string = preg_replace('~
+            (                                   # Capture the tag we match.
+                </                              # Start of close tag.
+                (?!                             # Do not match any of these specific close tag names.
+                    a> | b> | del> | em> | i> |
+                    ins> | s> | small> |
+                    strong> | sub> | sup> | u>
+                )
+                \w+                             # But, apart from those execptions, match any tag name.
+                >                               # End of close tag.
+            |
+                <br> | <br\s*/>                 # Special cases that are not close tags.
+            )
+            ~x', '$1 ', $string); // Add a space after the close tag.
+    // Now remove HTML tags.
     $string = strip_tags($string);
     // Decode HTML entities.
     $string = html_entity_decode($string);
-    // Replace underscores (which are classed as word characters) with spaces.
-    $string = preg_replace('/_/u', ' ', $string);
-    // Remove any characters that shouldn't be treated as word boundaries.
-    $string = preg_replace('/[\'"’-]/u', '', $string);
-    // Remove dots and commas from within numbers only.
-    $string = preg_replace('/([0-9])[.,]([0-9])/u', '$1$2', $string);
 
-    return count(preg_split('/\w\b/u', $string)) - 1;
+    // Now, the word count is the number of blocks of characters separated
+    // by any sort of space. That seems to be the definition used by all other systems.
+    // To be precise about what is considered to separate words:
+    // * Anything that Unicode considers a 'Separator'
+    // * Anything that Unicode considers a 'Control character'
+    // * An em- or en- dash.
+    return count(preg_split('~[\p{Z}\p{Cc}—–]+~u', $string, -1, PREG_SPLIT_NO_EMPTY));
 }
 
 /**
@@ -8338,11 +8384,12 @@ function count_words($string) {
  * Letters are defined as chars not in tags and different from whitespace.
  *
  * @category string
- * @param string $string The text to be searched for letters.
+ * @param string $string The text to be searched for letters. May be HTML.
  * @return int The count of letters in the specified text.
  */
 function count_letters($string) {
     $string = strip_tags($string); // Tags are out now.
+    $string = html_entity_decode($string);
     $string = preg_replace('/[[:space:]]*/', '', $string); // Whitespace are out now.
 
     return core_text::strlen($string);
@@ -9247,7 +9294,7 @@ function remoteip_in_list($list) {
 function getremoteaddr($default='0.0.0.0') {
     global $CFG;
 
-    if (empty($CFG->getremoteaddrconf)) {
+    if (!isset($CFG->getremoteaddrconf)) {
         // This will happen, for example, before just after the upgrade, as the
         // user is redirected to the admin screen.
         $variablestoskip = GETREMOTEADDR_SKIP_DEFAULT;
@@ -10346,6 +10393,21 @@ function unserialize_array($expression) {
 }
 
 /**
+ * Safe method for unserializing given input that is expected to contain only a serialized instance of an stdClass object
+ *
+ * If any class type other than stdClass is included in the input string, it will not be instantiated and will be cast to an
+ * stdClass object. The initial cast to array, then back to object is to ensure we are always returning the correct type,
+ * otherwise we would return an instances of {@see __PHP_Incomplete_class} for malformed strings
+ *
+ * @param string $input
+ * @return stdClass
+ */
+function unserialize_object(string $input): stdClass {
+    $instance = (array) unserialize($input, ['allowed_classes' => [stdClass::class]]);
+    return (object) $instance;
+}
+
+/**
  * The lang_string class
  *
  * This special class is used to create an object representation of a string request.
@@ -10451,7 +10513,7 @@ class lang_string {
         // changes are not carried across.
         // To do this we always ensure $a or its properties/values are strings
         // and that any properties/values that arn't convertable are forgotten.
-        if (!empty($a)) {
+        if ($a !== null) {
             if (is_scalar($a)) {
                 $this->a = $a;
             } else if ($a instanceof lang_string) {

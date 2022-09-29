@@ -129,7 +129,10 @@ class renderer_base {
                 // Don't allow the JavaScript helper to be executed from within another
                 // helper. If it's allowed it can be used by users to inject malicious
                 // JS into the page.
-                'blacklistednestedhelpers' => ['js']));
+                'blacklistednestedhelpers' => ['js'],
+                // Disable lambda rendering - content in helpers is already rendered, no need to render it again.
+                'disable_lambda_rendering' => true,
+            ));
 
         }
 
@@ -872,13 +875,15 @@ class core_renderer extends renderer_base {
                     html_writer::link($purgeurl, get_string('purgecaches', 'admin')) . '</div>';
         }
         if (!empty($CFG->debugvalidators)) {
-            // NOTE: this is not a nice hack, $this->page->url is not always accurate and
-            // $FULLME neither, it is not a bug if it fails. --skodak.
-            $output .= '<div class="validators"><ul class="list-unstyled ml-1">
-              <li><a href="http://validator.w3.org/check?verbose=1&amp;ss=1&amp;uri=' . urlencode(qualified_me()) . '">Validate HTML</a></li>
-              <li><a href="http://www.contentquality.com/mynewtester/cynthia.exe?rptmode=-1&amp;url1=' . urlencode(qualified_me()) . '">Section 508 Check</a></li>
-              <li><a href="http://www.contentquality.com/mynewtester/cynthia.exe?rptmode=0&amp;warnp2n3e=1&amp;url1=' . urlencode(qualified_me()) . '">WCAG 1 (2,3) Check</a></li>
-            </ul></div>';
+            $siteurl = qualified_me();
+            $nuurl = new moodle_url('https://validator.w3.org/nu/', ['doc' => $siteurl, 'showsource' => 'yes']);
+            $waveurl = new moodle_url('https://wave.webaim.org/report#/' . urlencode($siteurl));
+            $validatorlinks = [
+                html_writer::link($nuurl, get_string('validatehtml')),
+                html_writer::link($waveurl, get_string('wcagcheck'))
+            ];
+            $validatorlinkslist = html_writer::alist($validatorlinks, ['class' => 'list-unstyled ml-1']);
+            $output .= html_writer::div($validatorlinkslist, 'validators');
         }
         return $output;
     }
@@ -2511,8 +2516,6 @@ class core_renderer extends renderer_base {
      * @return string
      */
     protected function render_user_picture(user_picture $userpicture) {
-        global $CFG, $DB;
-
         $user = $userpicture->user;
         $canviewfullnames = has_capability('moodle/site:viewfullnames', $this->page->context);
 
@@ -2545,11 +2548,10 @@ class core_renderer extends renderer_base {
         $attributes = array('src' => $src, 'class' => $class, 'width' => $size, 'height' => $size);
         if (!$userpicture->visibletoscreenreaders) {
             $alt = '';
-            $attributes['aria-hidden'] = 'true';
         }
+        $attributes['alt'] = $alt;
 
         if (!empty($alt)) {
-            $attributes['alt'] = $alt;
             $attributes['title'] = $alt;
         }
 
@@ -4138,15 +4140,11 @@ EOD;
         $subheader = null;
         $userbuttons = null;
 
-        if ($this->should_display_main_logo($headinglevel)) {
-            $sitename = format_string($SITE->fullname, true, array('context' => context_course::instance(SITEID)));
-            return html_writer::div(html_writer::empty_tag('img', [
-                    'src' => $this->get_logo_url(null, 150), 'alt' => $sitename, 'class' => 'img-fluid']), 'logo');
-        }
-
         // Make sure to use the heading if it has been set.
         if (isset($headerinfo['heading'])) {
             $heading = $headerinfo['heading'];
+        } else {
+            $heading = $this->page->heading;
         }
 
         // The user context currently has images and buttons. Other contexts may follow.
@@ -4171,7 +4169,7 @@ EOD;
 
             if (user_can_view_profile($user, $course)) {
                 // Use the user's full name if the heading isn't set.
-                if (!isset($heading)) {
+                if (empty($heading)) {
                     $heading = fullname($user);
                 }
 
@@ -4217,6 +4215,26 @@ EOD;
             }
         }
 
+        if ($this->should_display_main_logo($headinglevel)) {
+            $sitename = format_string($SITE->fullname, true, ['context' => context_course::instance(SITEID)]);
+            // Logo.
+            $html = html_writer::div(
+                html_writer::empty_tag('img', [
+                    'src' => $this->get_logo_url(null, 150),
+                    'alt' => get_string('logoof', '', $sitename),
+                    'class' => 'img-fluid'
+                ]),
+                'logo'
+            );
+            // Heading.
+            if (!isset($heading)) {
+                $html .= $this->heading($this->page->heading, $headinglevel, 'sr-only');
+            } else {
+                $html .= $this->heading($heading, $headinglevel, 'sr-only');
+            }
+            return $html;
+        }
+
         $contextheader = new context_header($heading, $headinglevel, $imagedata, $userbuttons);
         return $this->render_context_header($contextheader);
     }
@@ -4245,9 +4263,17 @@ EOD;
       */
     protected function render_context_header(context_header $contextheader) {
 
+        // Generate the heading first and before everything else as we might have to do an early return.
+        if (!isset($contextheader->heading)) {
+            $heading = $this->heading($this->page->heading, $contextheader->headinglevel);
+        } else {
+            $heading = $this->heading($contextheader->heading, $contextheader->headinglevel);
+        }
+
         $showheader = empty($this->page->layout_options['nocontextheader']);
         if (!$showheader) {
-            return '';
+            // Return the heading wrapped in an sr-only element so it is only visible to screen-readers.
+            return html_writer::div($heading, 'sr-only');
         }
 
         // All the html stuff goes here.
@@ -4260,13 +4286,7 @@ EOD;
         }
 
         // Headings.
-        if (!isset($contextheader->heading)) {
-            $headings = $this->heading($this->page->heading, $contextheader->headinglevel);
-        } else {
-            $headings = $this->heading($contextheader->heading, $contextheader->headinglevel);
-        }
-
-        $html .= html_writer::tag('div', $headings, array('class' => 'page-header-headings'));
+        $html .= html_writer::tag('div', $heading, array('class' => 'page-header-headings'));
 
         // Buttons.
         if (isset($contextheader->additionalbuttons)) {

@@ -77,7 +77,7 @@ Feature: Edit quiz page - adding things
     When I press "Repaginate"
     Then I should see "Repaginate with"
     And I set the field "menuquestionsperpage" to "2"
-    When I press "Go"
+    When I click on "Go" "button" in the "Repaginate" "dialogue"
     And I should see "Essay 01 new" on quiz page "1"
     And I should see "Essay 02 new" on quiz page "1"
     And I should see "Essay 03 new" on quiz page "2"
@@ -105,8 +105,7 @@ Feature: Edit quiz page - adding things
       in various categories and add them to the question bank.
 
     # Create a couple of sub categories.
-    When I am on "Course 1" course homepage
-    And I navigate to "Question bank > Categories" in current page administration
+    When I am on the "Course 1" "core_question > course question categories" page
     Then I should see "Add category"
     Then I set the field "Parent category" to "Default for C1"
     And I set the field "Name" to "Subcat 1"
@@ -231,7 +230,7 @@ Feature: Edit quiz page - adding things
     When I press "Repaginate"
     Then I should see "Repaginate with"
     And I set the field "menuquestionsperpage" to "1"
-    When I press "Go"
+    When I click on "Go" "button" in the "Repaginate" "dialogue"
     And I should see "Essay 03" on quiz page "1"
     And I should see "Essay 01" on quiz page "2"
     And I should see "Essay 02" on quiz page "3"

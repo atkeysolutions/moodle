@@ -506,20 +506,26 @@ function get_users_listing($sort='lastaccess', $dir='ASC', $page=0, $recordsperp
         $params = $params + (array)$extraparams;
     }
 
-    if ($sort) {
-        $sort = " ORDER BY $sort $dir";
-    }
-
     // If a context is specified, get extra user fields that the current user
     // is supposed to see.
     $extrafields = '';
+    $includedfields = ['id', 'username', 'email', 'firstname', 'lastname', 'city', 'country',
+        'lastaccess', 'confirmed', 'mnethostid', 'suspended'];
     if ($extracontext) {
-        $extrafields = get_extra_user_fields_sql($extracontext, '', '',
-                array('id', 'username', 'email', 'firstname', 'lastname', 'city', 'country',
-                'lastaccess', 'confirmed', 'mnethostid'));
+        $extrafields = get_extra_user_fields_sql($extracontext, '', '', $includedfields);
     }
     $namefields = get_all_user_name_fields(true);
     $extrafields = "$extrafields, $namefields";
+
+    if ($sort) {
+        $orderbymap = trim($extrafields, ', ');
+        $orderbymap = array_merge(explode(',', $orderbymap), $includedfields);
+        $neworderbymap = ['default' => 'lastaccess'];
+        foreach($orderbymap as $value) {
+            $neworderbymap[$value] = $value;
+        }
+        $sort = get_safe_orderby($neworderbymap, $sort, $dir);
+    }
 
     // warning: will return UNCONFIRMED USERS
     return $DB->get_records_sql("SELECT id, username, email, city, country, lastaccess, confirmed, mnethostid, suspended $extrafields
@@ -609,7 +615,7 @@ function get_course($courseid, $clone = true) {
  * @uses CONTEXT_COURSE
  * @param string|int $categoryid Either a category id or 'all' for everything
  * @param string $sort A field and direction to sort by
- * @param string $fields The additional fields to return
+ * @param string $fields The additional fields to return (note that "id, category, visible" are always present)
  * @return array Array of courses
  */
 function get_courses($categoryid="all", $sort="c.sortorder ASC", $fields="c.*") {
@@ -636,6 +642,19 @@ function get_courses($categoryid="all", $sort="c.sortorder ASC", $fields="c.*") 
     $ccselect = ', ' . context_helper::get_preload_record_columns_sql('ctx');
     $ccjoin = "LEFT JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)";
     $params['contextlevel'] = CONTEXT_COURSE;
+
+    // The fields "id, category, visible" are required in the subsequent loop and must always be present.
+    if ($fields !== 'c.*') {
+        $fieldarray = array_merge(
+            // Split fields on comma + zero or more whitespace, merge with required fields.
+            preg_split('/,\s*/', $fields), [
+                'c.id',
+                'c.category',
+                'c.visible',
+            ]
+        );
+        $fields = implode(',', array_unique($fieldarray));
+    }
 
     $sql = "SELECT $fields $ccselect
               FROM {course} c
@@ -1803,4 +1822,98 @@ function decompose_update_into_safe_changes(array $newvalues, $unusedvalue) {
     }
 
     return $safechanges;
+}
+
+/**
+ * Prepare a safe ORDER BY statement from user interactable requests.
+ *
+ * This allows safe user specified sorting (ORDER BY), by abstracting the SQL from the value being requested by the user.
+ * A standard string (and optional direction) can be specified, which will be mapped to a predefined allow list of SQL ordering.
+ * The mapping can optionally include a 'default', which will be used if the key provided is invalid.
+ *
+ * Example usage:
+ *      -If $orderbymap = [
+ *              'courseid' => 'c.id',
+ *              'somecustomvalue'=> 'c.startdate, c.shortname',
+ *              'default' => 'c.fullname',
+ *       ]
+ *      -A value from the map array's keys can be passed in by a user interaction (eg web service) along with an optional direction.
+ *      -get_safe_orderby($orderbymap, 'courseid', 'DESC') would return: ORDER BY c.id DESC
+ *      -get_safe_orderby($orderbymap, 'somecustomvalue') would return: ORDER BY c.startdate, c.shortname
+ *      -get_safe_orderby($orderbymap, 'invalidblah', 'DESC') would return: ORDER BY c.fullname DESC
+ *      -If no default key was specified in $orderbymap, the invalidblah example above would return empty string.
+ *
+ * @param array $orderbymap An array in the format [keystring => sqlstring]. A default fallback can be set with the key 'default'.
+ * @param string $orderbykey A string to be mapped to a key in $orderbymap.
+ * @param string $direction Optional ORDER BY direction (ASC/DESC, case insensitive).
+ * @param bool $useprefix Whether ORDER BY is prefixed to the output (true by default). This should not be modified in most cases.
+ *                        It is included to enable get_safe_orderby_multiple() to use this function multiple times.
+ * @return string The ORDER BY statement, or empty string if $orderbykey is invalid and no default is mapped.
+ */
+function get_safe_orderby(array $orderbymap, string $orderbykey, string $direction = '', bool $useprefix = true): string {
+    $orderby = $useprefix ? ' ORDER BY ' : '';
+    $output = '';
+
+    // Only include an order direction if ASC/DESC is explicitly specified (case insensitive).
+    $direction = strtoupper($direction);
+    if (!in_array($direction, ['ASC', 'DESC'], true)) {
+        $direction = '';
+    } else {
+        $direction = " {$direction}";
+    }
+
+    // Prepare the statement if the key maps to a defined sort parameter.
+    if (isset($orderbymap[$orderbykey])) {
+        $output = "{$orderby}{$orderbymap[$orderbykey]}{$direction}";
+    } else if (array_key_exists('default', $orderbymap)) {
+        // Fall back to use the default if one is specified.
+        $output = "{$orderby}{$orderbymap['default']}{$direction}";
+    }
+
+    return $output;
+}
+
+/**
+ * Prepare a safe ORDER BY statement from user interactable requests using multiple values.
+ *
+ * This allows safe user specified sorting (ORDER BY) similar to get_safe_orderby(), but supports multiple keys and directions.
+ * This is useful in cases where combinations of columns are needed and/or each item requires a specified direction (ASC/DESC).
+ * The mapping can optionally include a 'default', which will be used if the key provided is invalid.
+ *
+ * Example usage:
+ *      -If $orderbymap = [
+ *              'courseid' => 'c.id',
+ *              'fullname'=> 'c.fullname',
+ *              'default' => 'c.startdate',
+ *          ]
+ *      -An array of values from the map's keys can be passed in by a user interaction (eg web service), with optional directions.
+ *      -get_safe_orderby($orderbymap, ['courseid', 'fullname'], ['DESC', 'ASC']) would return: ORDER BY c.id DESC, c.fullname ASC
+ *      -get_safe_orderby($orderbymap, ['courseid', 'invalidblah'], ['aaa', 'DESC']) would return: ORDER BY c.id, c.startdate DESC
+ *      -If no default key was specified in $orderbymap, the invalidblah example above would return: ORDER BY c.id
+ *
+ * @param array $orderbymap An array in the format [keystring => sqlstring]. A default fallback can be set with the key 'default'.
+ * @param array $orderbykeys An array of strings to be mapped to keys in $orderbymap.
+ * @param array $directions Optional array of ORDER BY direction (ASC/DESC, case insensitive).
+ *                          The array keys should match array keys in $orderbykeys.
+ * @return string The ORDER BY statement, or empty string if $orderbykeys contains no valid items and no default is mapped.
+ */
+function get_safe_orderby_multiple(array $orderbymap, array $orderbykeys, array $directions = []): string {
+    $output = '';
+
+    // Check each key for a valid mapping and add to the ORDER BY statement (invalid entries will be empty strings).
+    foreach ($orderbykeys as $index => $orderbykey) {
+        $direction = $directions[$index] ?? '';
+        $safeorderby = get_safe_orderby($orderbymap, $orderbykey, $direction, false);
+
+        if (!empty($safeorderby)) {
+            $output .= ", {$safeorderby}";
+        }
+    }
+
+    // Prefix with ORDER BY if any valid ordering is specified (and remove comma from the start).
+    if (!empty($output)) {
+        $output = ' ORDER BY' . ltrim($output, ',');
+    }
+
+    return $output;
 }
