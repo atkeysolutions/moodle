@@ -37,7 +37,7 @@ jobs:
         application_name: Moodle
         environment_name: MoodleProd
         version_label: ${{ github.sha }}_prod
-        deployment_package: deploy.zip
+        deployment_package: ${{ github.sha}}-deploy.zip
         wait_for_environment_recovery: 60
         use_existing_version_if_available: true
         region: eu-west-2
