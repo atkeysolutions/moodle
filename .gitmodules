@@ -17,3 +17,7 @@
 	path = course/format/tiles
 	url = git@github.com:atkeysolutions/moodle-format_tiles.git
 	branch = blue
+[submodule "mod/customcert"]
+	path = mod/customcert
+	url = https://github.com/mdjnelson/moodle-mod_customcert.git
+	branch = MOODLE_39_STABLE
