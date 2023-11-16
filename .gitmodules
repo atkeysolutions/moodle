@@ -1,11 +1,9 @@
 [submodule "mod/bigbluebuttonbn"]
 	path = mod/bigbluebuttonbn
 	url = git@github.com:blindsidenetworks/moodle-mod_bigbluebuttonbn.git
-        branch = v2.4-stable
 [submodule "mod/scheduler"]
 	path = mod/scheduler
 	url = git@github.com:bostelm/moodle-mod_scheduler.git
-        branch = MOODLE_37_STABLE
 [submodule "mod/bootstrapelements"]
 	path = mod/bootstrapelements
 	url = https://bitbucket.org/covuni/moodle-mod_bootstrapelements.git
