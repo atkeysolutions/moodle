@@ -35,7 +35,7 @@ jobs:
         aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         application_name: "Moodle Staging"
-        environment_name: MoodlestagingUpgrade
+        environment_name: MoodleStagingUpgrade
         version_label: ${{ github.sha }}
         deployment_package: ${{ github.sha}}-deploy.zip
         wait_for_environment_recovery: 60
