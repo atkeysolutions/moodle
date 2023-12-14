@@ -11,7 +11,7 @@
       complete_user_login($user);
       $user->profile_field_bluesky_learning_auth_token = "";
       profile_save_data($user);
-      redirect($_GET['courseid'] ? ("/course/view.php?id=" . $_GET['courseid']) : "/");
+      redirect($_GET['courseid'] ? ($CFG->wwwroot . "/course/view.php?id=" . $_GET['courseid']) : "/");
     } else {
       print_error("nologinas");
     }
