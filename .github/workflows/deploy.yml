@@ -25,7 +25,7 @@ jobs:
         environment_name: Moodlestaging-20220928
         version_label: ${{ github.sha }}
         deployment_package: ${{ github.sha}}-deploy.zip
-        wait_for_environment_recovery: 60
+        wait_for_environment_recovery: 120
         use_existing_version_if_available: true
         region: eu-west-2
       if: github.ref == 'refs/heads/blue_39'
@@ -51,7 +51,7 @@ jobs:
         environment_name: MoodleProd
         version_label: ${{ github.sha }}_prod
         deployment_package: ${{ github.sha}}-deploy.zip
-        wait_for_environment_recovery: 60
+        wait_for_environment_recovery: 120
         use_existing_version_if_available: true
         region: eu-west-2
       if: github.ref == 'refs/heads/blue_39_prod'
