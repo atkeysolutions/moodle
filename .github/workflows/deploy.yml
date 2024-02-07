@@ -2,9 +2,9 @@ name: Deploy Moodle
 
 on:
   push:
-    branches: [ 'blue_39', 'blue_39_prod' ]
+    branches: [ 'blue_39', 'blue_39_upgrade', 'blue_39_uat', 'blue_39_prod' ]
   pull_request:
-    branches: [ 'blue_39', 'blue_39_prod' ]
+    branches: [ 'blue_39', 'blue_39_upgrade', 'blue_39_uat', 'blue_39_prod' ]
 
 jobs:
   build:
@@ -29,6 +29,32 @@ jobs:
         use_existing_version_if_available: true
         region: eu-west-2
       if: github.ref == 'refs/heads/blue_39'
+    - name: Deploy to Staging Upgrade
+      uses: einaregilsson/beanstalk-deploy@v20
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: "Moodle Staging"
+        environment_name: MoodleStagingUpgrade
+        version_label: ${{ github.sha }}_upgrade
+        deployment_package: ${{ github.sha}}-deploy.zip
+        wait_for_environment_recovery: 150
+        use_existing_version_if_available: true
+        region: eu-west-2
+      if: github.ref == 'refs/heads/blue_39_upgrade'
+    - name: Deploy to UAT
+      uses: einaregilsson/beanstalk-deploy@v20
+      with:
+        aws_access_key: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+        application_name: Moodle
+        environment_name: MoodleUAT
+        version_label: ${{ github.sha }}_uat
+        deployment_package: ${{ github.sha}}-deploy.zip
+        wait_for_environment_recovery: 150
+        use_existing_version_if_available: true
+        region: eu-west-2
+      if: github.ref == 'refs/heads/blue_39_uat'
     - name: Deploy to Production
       uses: einaregilsson/beanstalk-deploy@v20
       with:
