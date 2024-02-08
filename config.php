@@ -38,7 +38,7 @@ $CFG->directorypermissions = 0777;
 // It is strongly recommended to use a value different from your real account
 // password.
 //
-$CFG->upgradekey = 'UpgradeKey123!';
+$CFG->upgradekey = getenv('UPGRADEKEY');
 
 // Use the following flag to completely disable the Available update notifications
 // feature and hide it from the server administration UI.
