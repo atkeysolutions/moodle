@@ -16,7 +16,7 @@ if ( $hassiteconfig ){
 	$settings->add( new admin_setting_configcheckbox(
 		'local_bluesky_learning_auth/backdoor_active',
 		get_string('backdoor_active','local_bluesky_learning_auth'),
-		get_string('backdoor_active_help','local_bluesky_learning_auth'),
+		get_string('backdoor_active_help','local_bluesky_learning_auth',$CFG->wwwroot),
 		0
 	) );
 
